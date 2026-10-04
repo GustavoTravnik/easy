@@ -1,0 +1,20 @@
+# Environments
+venv/
+env/
+.env
+
+# Cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS Generated
+.DS_Store
+Thumbs.db
+
+# Generated binaries/scripts
+easy.cmd
+
+# IDEs
+.vscode/
+.idea/

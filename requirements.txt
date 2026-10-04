@@ -1,0 +1,4 @@
+typer[all]
+python-dotenv
+prompt_toolkit
+rich
