@@ -88,12 +88,14 @@ def cmd_new_project(param: str, cli: str):
         return
         
     try:
-        # Passamos o caminho absoluto da pasta wizzards e indicamos o main.md como entrypoint
-        prompt_especial = f"Inicie o wizard de criação de projeto. Você deve trabalhar na pasta wizzard com o path absoluto '{wizard_dir}' e utilizar o arquivo '{wizard_path}' como seu entrypoint."
+        # Passamos o caminho absoluto da pasta wizzards e indicamos o main.md como entrypoint,
+        # mas garantimos que o projeto seja criado no diretório atual do desenvolvedor.
+        prompt_especial = f"Inicie o wizard de criação de projeto. Leia as instruções no arquivo '{wizard_path}' (seu entrypoint). CRIE A ESTRUTURA DO PROJETO AQUI neste exato diretório em que estou: '{os.getcwd()}'"
         
         console.print(f"[bold yellow]Iniciando Wizard via {cli}...[/bold yellow]")
         
-        cli_args = [cli, "-p", prompt_especial]
+        prompt_flag = "-i" if cli == "agy" else "-p"
+        cli_args = [cli, prompt_flag, prompt_especial]
         if get_cli_mode() == "auto":
             if cli == "agy":
                 cli_args.insert(1, "--dangerously-skip-permissions")
@@ -101,8 +103,8 @@ def cmd_new_project(param: str, cli: str):
                 cli_args.insert(1, "-y")
                 
         # Deixa o processo herdar as streams para que ferramentas interativas (como ask_question) funcionem.
-        # Usa o cwd do wizard para que ele tenha o contexto da pasta (opcional, mas ajuda a manter o foco)
-        subprocess.run(cli_args, cwd=str(wizard_dir))
+        # Removemos o cwd=wizard_dir para que ele rode e crie arquivos na pasta atual do usuário!
+        subprocess.run(cli_args)
         
     except Exception as e:
         console.print(f"[bold red]Erro ao executar o wizard:[/bold red] {e}")

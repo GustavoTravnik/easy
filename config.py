@@ -6,31 +6,7 @@ import platform
 import ctypes
 from pathlib import Path
 
-def require_admin():
-    os_name = platform.system()
-    if os_name == "Windows":
-        try:
-            is_admin = ctypes.windll.shell32.IsUserAnAdmin()
-        except Exception:
-            is_admin = False
-        if not is_admin:
-            print("Solicitando privilégios administrativos...")
-            # Pega o caminho absoluto para o script, já que o UAC pode mudar o diretório de execução para System32
-            script_path = os.path.abspath(sys.argv[0])
-            params = " ".join([f'"{script_path}"'] + sys.argv[1:])
-            # Re-executa o script atual com elevação de UAC
-            ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, params, None, 1)
-            sys.exit()
-    else:
-        # Linux / Mac
-        if os.geteuid() != 0:
-            print("Solicitando privilégios administrativos (sudo)...")
-            # Re-executa o script com sudo
-            subprocess.check_call(['sudo', sys.executable] + sys.argv)
-            sys.exit()
-
 def main():
-    require_admin()
     print("Iniciando configuração do ambiente Easy CLI...")
     base_dir = Path(__file__).resolve().parent
     
@@ -86,7 +62,9 @@ def main():
         profile_path_result = subprocess.run(["powershell", "-Command", ps_cmd], capture_output=True, text=True)
         if profile_path_result.returncode == 0:
             profile_path = Path(profile_path_result.stdout.strip())
-            alias_code = f'\nfunction easy {{ & "{python_exe}" "{main_py}" $args }}\n'
+            
+            # ATUALIZADO: Passando --cwd com o diretório atual do PowerShell ($PWD.Path)
+            alias_code = f'\nfunction easy {{ & "{python_exe}" "{main_py}" --cwd "$($PWD.Path)" $args }}\n'
             
             profile_content = profile_path.read_text(encoding="utf-8") if profile_path.exists() else ""
             if "function easy {" not in profile_content:
@@ -94,14 +72,20 @@ def main():
                     f.write(alias_code)
                 print(f"Alias 'easy' adicionado ao seu PowerShell Profile ({profile_path}).")
             else:
-                print("Alias 'easy' já existe no PowerShell Profile.")
+                # Atualiza a função se ela já existir no profile
+                import re
+                profile_content = re.sub(r'function easy \{.*?\}', lambda _: alias_code.strip(), profile_content, flags=re.DOTALL)
+                with open(profile_path, "w", encoding="utf-8") as f:
+                    f.write(profile_content)
+                print("Alias 'easy' atualizado no PowerShell Profile.")
         else:
             print("Erro ao tentar configurar perfil do PowerShell.")
             
         # 5.2 Criar um arquivo .cmd para funcionar no Prompt de Comando (CMD) normal
         cmd_path = base_dir / "easy.cmd"
         with open(cmd_path, "w", encoding="utf-8") as f:
-            f.write(f'@echo off\n"{python_exe}" "{main_py}" %*\n')
+            # ATUALIZADO: Passando --cwd com a variável do CMD (%CD%)
+            f.write(f'@echo off\n"{python_exe}" "{main_py}" --cwd "%CD%" %*\n')
             
         # Adicionar o diretório base ao PATH do usuário do Windows para o .cmd ser global
         import winreg
@@ -120,7 +104,8 @@ def main():
             
         print("\n-> Por favor, FECHE e ABRA seu terminal novamente (tanto PowerShell quanto CMD) para que o comando funcione.")
     else: # Linux/Mac
-        alias_code = f'\nalias easy="{python_exe} {main_py}"\n'
+        # ATUALIZADO: Passando --cwd com a variável nativa de terminais bash/zsh ($PWD)
+        alias_code = f"\nalias easy='\"{python_exe}\" \"{main_py}\" --cwd \"$PWD\"'\n"
         for rc_name in [".bashrc", ".zshrc"]:
             rc_path = Path.home() / rc_name
             if rc_path.exists():
@@ -130,7 +115,7 @@ def main():
                         f.write(alias_code)
                     print(f"Alias 'easy' adicionado ao ~/{rc_name}.")
                 else:
-                    print(f"Alias 'easy' já existe no ~/{rc_name}.")
+                    print(f"Alias 'easy' já existe no ~/{rc_name}. Certifique-se de atualizá-lo para incluir o --cwd.")
 
     print("\nConfiguração finalizada com sucesso! Seu CLI 'easy' está pronto para uso.")
     input("\nPressione Enter para fechar...")
