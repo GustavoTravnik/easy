@@ -79,11 +79,40 @@ def cmd_test_test(param: str, cli: str):
     except Exception as e:
         console.print(f"[bold red]Erro ao executar:[/bold red] {e}")
 
+def cmd_new_project(param: str, cli: str):
+    wizard_dir = Path(__file__).resolve().parent / "wizzards"
+    wizard_path = wizard_dir / "main.md"
+    
+    if not wizard_path.exists():
+        console.print(f"[bold red]Arquivo base do wizard não encontrado em: {wizard_path}[/bold red]")
+        return
+        
+    try:
+        # Passamos o caminho absoluto da pasta wizzards e indicamos o main.md como entrypoint
+        prompt_especial = f"Inicie o wizard de criação de projeto. Você deve trabalhar na pasta wizzard com o path absoluto '{wizard_dir}' e utilizar o arquivo '{wizard_path}' como seu entrypoint."
+        
+        console.print(f"[bold yellow]Iniciando Wizard via {cli}...[/bold yellow]")
+        
+        cli_args = [cli, "-p", prompt_especial]
+        if get_cli_mode() == "auto":
+            if cli == "agy":
+                cli_args.insert(1, "--dangerously-skip-permissions")
+            elif cli == "claude":
+                cli_args.insert(1, "-y")
+                
+        # Deixa o processo herdar as streams para que ferramentas interativas (como ask_question) funcionem.
+        # Usa o cwd do wizard para que ele tenha o contexto da pasta (opcional, mas ajuda a manter o foco)
+        subprocess.run(cli_args, cwd=str(wizard_dir))
+        
+    except Exception as e:
+        console.print(f"[bold red]Erro ao executar o wizard:[/bold red] {e}")
+
 COMMANDS_MAP = {
-    "/cli": {"description": "Configura qual IA usar (agy/claude)", "handler": cmd_cli},
-    "/mode": {"description": "Configura o modo de execução (auto/ask)", "handler": cmd_mode},
-    "/commands": {"description": "Lista todos os comandos disponíveis", "handler": cmd_commands},
-    "test-test": {"description": "Testa comando traduzindo texto para russo", "handler": cmd_test_test},
+    "/cli": {"description": "Configura qual IA usar (agy/claude)", "handler": cmd_cli, "wait": True},
+    "/mode": {"description": "Configura o modo de execução (auto/ask)", "handler": cmd_mode, "wait": True},
+    "/commands": {"description": "Lista todos os comandos disponíveis", "handler": cmd_commands, "wait": True},
+    "test-test": {"description": "Testa comando traduzindo texto para russo", "handler": cmd_test_test, "wait": True},
+    "new-project": {"description": "Inicia um wizard interativo para criar novos projetos", "handler": cmd_new_project, "wait": True},
 }
 
 def handle_prompt(text: str):
