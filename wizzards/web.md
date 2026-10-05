@@ -17,7 +17,10 @@ Pergunte qual framework frontend o usuário deseja utilizar. Liste as opções E
 [ 1 ] Next.js
 [ 2 ] React (Vite)
 [ 3 ] Angular
-- *Condição:* Se ele escolher [ 1 ] Next.js, pergunte: "Você deseja usar as rotas de API nativas do Next.js (Fullstack) [ 1 ] ou criar uma API separada? [ 2 ]". Se a resposta for [ 1 ], PULE o Passo 2.
+- *Condição:* Se ele escolher [ 1 ] Next.js, pergunte:
+ "Você deseja usar as rotas de API nativas do Next.js (Fullstack) [ 1 ] ou 
+ criar uma API separada? [ 2 ]". 
+ Se a resposta for [ 1 ], PULE o Passo 2.
 
 **Passo 2: O Backend (A Lógica)**
 Pergunte qual tecnologia de backend o usuário prefere para essa POV. Liste as opções EXATAMENTE assim:
